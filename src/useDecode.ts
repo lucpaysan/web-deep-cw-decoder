@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, type MutableRefObject } from "react";
+import { useEffect, useState, useRef } from "react";
 import { loadModel, runInference } from "./utils/inference";
 import { useAudioProcessing } from "./hooks/useAudioProcessing";
 import { defaultBayesianDecoder } from "./core/bayesianDecoder";
@@ -104,63 +104,43 @@ export const useDecode = ({
     }
 
     let cancelled = false;
-    let lastAudioVersion = -1;
 
     const decodeContinuously = async () => {
       while (!cancelled) {
-        const audioVersion = audioBufferRef.current.version;
-        if (audioVersion === lastAudioVersion) {
-          await waitForNextAudioChunk(
-            audioBufferRef,
-            audioVersion,
-            () => cancelled,
-          );
-          if (cancelled) {
-            return;
-          }
-          continue;
-        }
-
-        lastAudioVersion = audioVersion;
         const { filterFreq, filterWidth } = filterParamsRef.current;
 
-        if (decoderMode === "BAYESIAN") {
-          // Use Bayesian decoder
-          const result = bayesianDecoderRef.current.processAudio(
-            audioBufferRef.current.samples,
-            SAMPLE_RATE
-          );
-          if (cancelled) {
-            return;
-          }
-          setCurrentSegments(bayesianToTextSegment(result.text));
-        } else {
-          // Use Deep Learning decoder
-          const segmentsEn = await runInference(
-            audioBufferRef.current.samples,
+        const segmentsEn = await runInference(
+          audioBufferRef.current,
+          filterFreq,
+          filterWidth,
+          "en"
+        );
+        if (cancelled) {
+          return;
+        }
+        setCurrentSegments(segmentsEn);
+
+        if (language === "EN/JA" && loadedJa) {
+          const segmentsJa = await runInference(
+            audioBufferRef.current,
             filterFreq,
             filterWidth,
-            "en"
+            "ja"
           );
           if (cancelled) {
             return;
           }
-          setCurrentSegments(segmentsEn);
-
-          if (language === "EN/JA" && loadedJa) {
-            const segmentsJa = await runInference(
-              audioBufferRef.current.samples,
-              filterFreq,
-              filterWidth,
-              "ja"
-            );
-            if (cancelled) {
-              return;
-            }
-            setCurrentSegmentsJa(segmentsJa);
-          }
+          setCurrentSegmentsJa(segmentsJa);
         }
       }
+    };
+
+    setIsDecoding(true);
+    void decodeContinuously();
+
+    return () => {
+      cancelled = true;
+      setIsDecoding(false);
     };
 
     setIsDecoding(true);
