@@ -26,6 +26,7 @@ type UseDecodeParams = {
   gain: number;
   stream: MediaStream | null;
   language: "EN" | "EN/JA";
+  enabled?: boolean;
 };
 
 export const useDecode = ({
@@ -34,6 +35,7 @@ export const useDecode = ({
   gain,
   stream,
   language,
+  enabled = true,
 }: UseDecodeParams) => {
   const [loaded, setLoaded] = useState(false);
   const [loadedJa, setLoadedJa] = useState(false);
@@ -65,7 +67,7 @@ export const useDecode = ({
   }, [filterFreq, filterWidth]);
 
   useEffect(() => {
-    if (!stream || !loaded) {
+    if (!stream || !loaded || !enabled) {
       return;
     }
 
@@ -123,7 +125,7 @@ export const useDecode = ({
       cancelled = true;
       setIsDecoding(false);
     };
-  }, [stream, loaded, loadedJa, language, audioBufferRef]);
+  }, [stream, loaded, loadedJa, language, enabled, audioBufferRef]);
 
   return { loaded, loadedJa, currentSegments, currentSegmentsJa, isDecoding };
 };

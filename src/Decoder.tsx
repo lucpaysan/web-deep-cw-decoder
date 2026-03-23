@@ -3,7 +3,9 @@ import { DEFAULT_DECODE_BANDWIDTH_HZ, SAMPLE_RATE } from "./const";
 import { Scope } from "./Scope";
 import { useDecode } from "./useDecode";
 import { DecodeDisplay } from "./DecodeDisplay";
-import { Box, Button, Flex, Stack, NativeSelect, Tooltip } from "@mantine/core";
+import { Box, Button, Flex, Stack, NativeSelect, Tooltip, SegmentedControl, Text } from "@mantine/core";
+
+type DecoderMode = "DL" | "BAYESIAN";
 
 export const Decoder = () => {
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -11,6 +13,7 @@ export const Decoder = () => {
   const [filterWidth, setFilterWidth] = useState<number>(250);
   const [gain, setGain] = useState<number>(0);
   const [language, setLanguage] = useState<"EN" | "EN/JA">("EN");
+  const [decoderMode, setDecoderMode] = useState<DecoderMode>("DL");
 
   const [audioInputDevices, setAudioInputDevices] = useState<MediaDeviceInfo[]>(
     [],
@@ -24,6 +27,7 @@ export const Decoder = () => {
       gain,
       stream,
       language,
+      enabled: decoderMode === "DL",
     });
 
   const setSelectedAudioInput = (deviceId: string) => {
@@ -58,7 +62,7 @@ export const Decoder = () => {
     setAudioInputDevices(audioInputs);
   };
 
-  const isLoading = !loaded || (language === "EN/JA" && !loadedJa);
+  const isLoading = decoderMode === "DL" && (!loaded || (language === "EN/JA" && !loadedJa));
   const isFilterEnabled = filterFreq !== null;
   const activeFilterWidth = isFilterEnabled
     ? filterWidth
@@ -90,6 +94,20 @@ export const Decoder = () => {
               LOADING...
             </Box>
           )}
+        </Flex>
+
+        {/* Decoder Mode Selector */}
+        <Flex align="center" gap="sm">
+          <Text size="sm" c="dimmed">DECODER:</Text>
+          <SegmentedControl
+            size="xs"
+            value={decoderMode}
+            onChange={(v) => setDecoderMode(v as DecoderMode)}
+            data={[
+              { label: "DL (High Accuracy)", value: "DL" },
+              { label: "Bayesian (Fast)", value: "BAYESIAN" },
+            ]}
+          />
         </Flex>
       </Flex>
 
@@ -184,7 +202,7 @@ export const Decoder = () => {
         </Tooltip>
         <NativeSelect
           label="CW LANG"
-          data={["EN", "EN/JA"]}
+          data={["EN"]}
           value={language}
           onChange={(event) =>
             setLanguage(event.currentTarget.value as "EN" | "EN/JA")

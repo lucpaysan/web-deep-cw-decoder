@@ -1,24 +1,51 @@
-# web-deep-cw-decoder
+# CW Master
 
-[DEMO](https://e04.github.io/web-deep-cw-decoder/)
+**基于 [web-deep-cw-decoder](https://github.com/e04/web-deep-cw-decoder) by e04 (MIT License) 二创**
+**二创作者: BY4CWY**
 
-<img width="825" height="514" alt="web-deep-cw" src="https://github.com/user-attachments/assets/a224be0a-a685-4dd8-be99-d0f376a43aa2" />
+Morse Code 编解码一体工具，支持深度学习解码和传统贝叶斯解码。
 
-This is a web-based, real-time Morse code (CW) decoder powered by a CRNN (Convolutional Recurrent Neural Network) model with a CTC Loss function.
+## 功能
 
-A key feature of this application is its client-side processing architecture. By leveraging ONNX Runtime Web, the entire decoding process runs completely within your browser.
+- **Morse 编码**: 文本 → Morse 音频，支持可调 WPM 和 Farnsworth 间距
+- **深度学习解码**: CRNN + CTC 神经网络，高精度
+- **贝叶斯解码**: 自适应信号速度，低延迟
+- **呼号预设**: BH4DUF / BY4CWY 快速切换
 
-The neural network model has been trained on an extensive dataset of 50 hours of programmatically generated Morse code audio, enabling it to achieve high accuracy across various sending speeds and conditions.
+## 下载
 
-## Features
+### macOS
+直接运行 `CW-Master-macOS` (13MB，无需安装)
 
-- **Real-time Morse code decoding** using machine learning
-- **Audio visualization** with spectrum scope style display
-- **Browser-based** - no installation required
-- **Multiplatform** - supports Windows/mac/Android/iOS devices
+### Windows
+1. 点击上方 **Tags** → **v1.0.0** (或创建新标签)
+2. GitHub Actions 会自动构建 Windows 版本
+3. 构建完成后在 Artifacts 下载
 
-## Usage
+## 鸣谢
 
-Open this page:
+- 原项目: [web-deep-cw-decoder](https://github.com/e04/web-deep-cw-decoder) by e04
+- 深度学习模型训练: 50小时 Morse Code 音频数据
+- ONNX Runtime Web
+- Mantine UI
 
-[https://e04.github.io/web-deep-cw-decoder/](https://e04.github.io/web-deep-cw-decoder/)
+## 本地开发
+
+```bash
+npm install
+npm run dev
+```
+
+## 构建
+
+```bash
+# macOS
+cargo build --release  # 输出: src-tauri/target/release/cw-master
+
+# Windows (需要 Windows 环境或 GitHub Actions)
+npm run tauri:build
+```
+
+## 版权声明
+
+Copyright (c) 2026 BY4CWY. Based on web-deep-cw-decoder by e04 (MIT License).
