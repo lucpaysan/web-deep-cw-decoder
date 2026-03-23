@@ -153,7 +153,8 @@ export const Decoder = () => {
               <DecodeDisplay
                 segments={currentSegmentsJa}
                 isDecoding={isDecoding}
-                backgroundColor="#36021e"
+                backgroundColor="#1a0a1e"
+                textColor="#f0abfc"
               />
             )}
           </Stack>

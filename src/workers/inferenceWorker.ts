@@ -35,12 +35,14 @@ const sessions: Record<Lang, ort.InferenceSession | null> = {
 
 async function ensureSession(lang: Lang): Promise<ort.InferenceSession> {
   if (sessions[lang]) return sessions[lang]!;
-  // Fetch ORT assets from the CDN to avoid module fetch failures in the worker.
-  ort.env.wasm.wasmPaths =
-    "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.0/dist/";
+  // Set WASM path prefix - ONNX Runtime appends filename to this path.
+  ort.env.wasm.wasmPaths = "/ort-wasm/";
+  console.log("[Worker] Creating session, wasmPaths:", ort.env.wasm.wasmPaths);
+  console.log("[Worker] Model URL:", MODEL_URLS[lang]);
   sessions[lang] = await ort.InferenceSession.create(MODEL_URLS[lang], {
     executionProviders: ["wasm"],
   });
+  console.log("[Worker] Session created successfully");
   return sessions[lang]!;
 }
 

@@ -63,16 +63,28 @@ export const useDecode = ({
 
   useEffect(() => {
     (async () => {
-      await loadModel("en");
-      setLoaded(true);
+      console.log("[useDecode] Loading English model...");
+      try {
+        await loadModel("en");
+        console.log("[useDecode] English model loaded successfully");
+        setLoaded(true);
+      } catch (error) {
+        console.error("[useDecode] Failed to load English model:", error);
+      }
     })();
   }, []);
 
   useEffect(() => {
     if (language === "EN/JA" && !loadedJa) {
       (async () => {
-        await loadModel("ja");
-        setLoadedJa(true);
+        console.log("[useDecode] Loading Japanese model...");
+        try {
+          await loadModel("ja");
+          console.log("[useDecode] Japanese model loaded successfully");
+          setLoadedJa(true);
+        } catch (error) {
+          console.error("[useDecode] Failed to load Japanese model:", error);
+        }
       })();
     }
   }, [language, loadedJa]);

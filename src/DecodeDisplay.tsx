@@ -14,12 +14,14 @@ type DecodeDisplayProps = {
   segments: TextSegment[];
   isDecoding: boolean;
   backgroundColor?: string;
+  textColor?: string;
 };
 
 export const DecodeDisplay = ({
   segments,
   isDecoding,
   backgroundColor = "var(--mantine-color-dark-9)",
+  textColor = "#4ade80",
 }: DecodeDisplayProps) => {
   const prevSegmentsRef = useRef(segments);
   const updateCount = useRef(0);
@@ -44,6 +46,7 @@ export const DecodeDisplay = ({
         width: "100%",
         height: "32px",
         fontSize: "20px",
+        fontFamily: "'SF Mono', 'Cascadia Code', 'Fira Code', monospace",
         borderTop: "1px solid var(--mantine-color-dark-8)",
       }}
     >
@@ -63,6 +66,7 @@ export const DecodeDisplay = ({
           height: "100%",
           overflow: "hidden",
           whiteSpace: "pre-wrap",
+          color: textColor,
           maskImage:
             "linear-gradient(to right, transparent 1%, black 15%, black 85%, transparent 99%)",
           WebkitMaskImage:
