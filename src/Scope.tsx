@@ -12,9 +12,7 @@ type ScopeProps = {
   filterFreq: number | null;
   filterWidth: number;
   gain: number;
-  /** Called when auto-filter detects a Morse signal frequency */
-  onAutoDetected?: (result: DetectionResult | null) => void;
-  autoFilterEnabled?: boolean;
+  decodeWindowSeconds: number;
 };
 
 export const Scope = ({
@@ -23,26 +21,12 @@ export const Scope = ({
   filterFreq,
   filterWidth,
   gain,
-  onAutoDetected,
-  autoFilterEnabled = false,
+  decodeWindowSeconds,
 }: ScopeProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
 
-  const handleAnalyserReady = useCallback((analyser: AnalyserNode) => {
-    analyserRef.current = analyser;
-    if (onAutoDetected) {
-      onAutoDetected(null); // signal that analyser is ready
-    }
-  }, [onAutoDetected]);
-
-  useSpectrogramRenderer({ stream, gain, canvasRef, onAnalyserReady: handleAnalyserReady });
-
-  useAutoFilter({
-    analyserRef,
-    enabled: autoFilterEnabled,
-    onDetected: onAutoDetected ?? (() => {}),
-  });
+  useSpectrogramRenderer({ stream, gain, canvasRef, decodeWindowSeconds });
 
   useCanvasInteraction({ canvasRef, filterFreq, setFilterFreq, filterWidth });
 

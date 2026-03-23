@@ -148,9 +148,12 @@ export const NumToChar = Object.fromEntries(
 export const FFT_LENGTH = 256;
 export const HOP_LENGTH = 64;
 export const SAMPLE_RATE = 3200;
-export const FFT_SIZE = 4096; // FFT size for AnalyserNode (must match in morseSignalDetector)
-export const BUFFER_DURATION_S = 12;
-export const BUFFER_SAMPLES = BUFFER_DURATION_S * SAMPLE_RATE;
+export const AUDIO_CHUNK_SAMPLES = 2048;
+export const DECODE_WINDOW_OPTIONS = [6, 12, 18, 30] as const;
+export type DecodeWindowSeconds = (typeof DECODE_WINDOW_OPTIONS)[number];
+export const DEFAULT_DECODE_WINDOW_S: DecodeWindowSeconds = 12;
+export const getBufferSamples = (durationSeconds: number) =>
+  durationSeconds * SAMPLE_RATE;
 
 export const MIN_FREQ_HZ = 100;
 export const MAX_FREQ_HZ = 1500;

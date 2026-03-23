@@ -1,23 +1,34 @@
-import { useEffect, useRef, useCallback } from "react";
-import { SAMPLE_RATE, BUFFER_SAMPLES } from "../const";
+import { useEffect, useRef } from "react";
+import { AUDIO_CHUNK_SAMPLES, SAMPLE_RATE, getBufferSamples } from "../const";
 
 export type AudioBufferState = {
   samples: Float32Array;
   version: number;
 };
 
-/**
- * Hook that captures audio from a MediaStream using AudioWorkletNode.
- * Maintains a rolling audio buffer that can be queried for decoding.
- *
- * Falls back to ScriptProcessorNode if AudioWorkletNode is not supported.
- */
+function audioCallback(
+  event: AudioProcessingEvent,
+  audioBufferState: AudioBufferState
+) {
+  const chunk = event.inputBuffer.getChannelData(0);
+  const chunkLen = chunk.length;
+  const { samples } = audioBufferState;
+  const offset = Math.max(0, samples.length - chunkLen);
+  const chunkSlice =
+    chunkLen > samples.length ? chunk.subarray(chunkLen - samples.length) : chunk;
+
+  samples.copyWithin(0, chunkLen);
+  samples.set(chunkSlice, offset);
+  audioBufferState.version += 1;
+}
+
 export function useAudioProcessing(
   stream: MediaStream | null,
-  gain: number
+  gain: number,
+  bufferDurationSeconds: number
 ): React.MutableRefObject<AudioBufferState> {
   const audioBufferRef = useRef<AudioBufferState>({
-    samples: new Float32Array(BUFFER_SAMPLES),
+    samples: new Float32Array(getBufferSamples(bufferDurationSeconds)),
     version: 0,
   });
 
@@ -40,6 +51,13 @@ export function useAudioProcessing(
   }, []);
 
   useEffect(() => {
+    audioBufferRef.current = {
+      samples: new Float32Array(getBufferSamples(bufferDurationSeconds)),
+      version: audioBufferRef.current.version + 1,
+    };
+  }, [bufferDurationSeconds]);
+
+  useEffect(() => {
     if (!stream) return;
 
     // Mark as not aborted when starting new setup
@@ -49,6 +67,18 @@ export function useAudioProcessing(
     const source = audioContext.createMediaStreamSource(stream);
     const gainNode = audioContext.createGain();
     gainNode.gain.value = Math.pow(10, gain / 20);
+
+    const scriptProcessor = audioContext.createScriptProcessor(
+      AUDIO_CHUNK_SAMPLES,
+      1,
+      1,
+    );
+    scriptProcessor.onaudioprocess = (event) =>
+      audioCallback(event, audioBufferRef.current);
+
+    source.connect(gainNode);
+    gainNode.connect(scriptProcessor);
+    scriptProcessor.connect(audioContext.destination);
 
     audioContextRef.current = audioContext;
     sourceRef.current = source;

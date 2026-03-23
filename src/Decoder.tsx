@@ -1,5 +1,11 @@
-import { useState, useCallback } from "react";
-import { DEFAULT_DECODE_BANDWIDTH_HZ, SAMPLE_RATE } from "./const";
+import { useState } from "react";
+import {
+  DEFAULT_DECODE_BANDWIDTH_HZ,
+  DEFAULT_DECODE_WINDOW_S,
+  DECODE_WINDOW_OPTIONS,
+  SAMPLE_RATE,
+  type DecodeWindowSeconds,
+} from "./const";
 import { Scope } from "./Scope";
 import { useDecode } from "./useDecode";
 import { DecodeDisplay } from "./DecodeDisplay";
@@ -14,9 +20,8 @@ export const Decoder = () => {
   const [filterWidth, setFilterWidth] = useState<number>(250);
   const [gain, setGain] = useState<number>(0);
   const [language, setLanguage] = useState<"EN" | "EN/JA">("EN");
-  const [decoderMode, setDecoderMode] = useState<DecoderMode>("DL");
-  const [autoFilterEnabled, setAutoFilterEnabled] = useState(false);
-  const [autoDetectedFreq, setAutoDetectedFreq] = useState<number | null>(null);
+  const [decodeWindowSeconds, setDecodeWindowSeconds] =
+    useState<DecodeWindowSeconds>(DEFAULT_DECODE_WINDOW_S);
 
   const [audioInputDevices, setAudioInputDevices] = useState<MediaDeviceInfo[]>(
     [],
@@ -30,8 +35,7 @@ export const Decoder = () => {
       gain,
       stream,
       language,
-      decoderMode,
-      enabled: true,
+      decodeWindowSeconds,
     });
 
   const setSelectedAudioInput = (deviceId: string) => {
@@ -104,21 +108,133 @@ export const Decoder = () => {
   const showJapaneseDisplay = language === "EN/JA";
 
   return (
-    <Stack gap={12}>
-      {/* Controls Card */}
-      <Paper p="md" radius="lg" shadow="sm" style={{ background: "white" }}>
-        <Flex justify="space-between" align="center" wrap="wrap" gap="md">
-          <Flex align="center" gap="md">
-            <Button
-              w={180}
-              h={48}
-              radius="xl"
-              color={isDecoding ? "red" : "emerald"}
-              onClick={() => {
-                if (isDecoding) {
-                  setStream(null);
-                } else {
-                  getStream(selectedAudioInput ?? undefined);
+    <Stack gap={8}>
+      <Flex justify="space-between" align="center">
+        <Flex align="center" gap="sm">
+          <Button
+            w={200}
+            color={isDecoding ? "red" : "indigo"}
+            onClick={() => {
+              if (isDecoding) {
+                setStream(null);
+              } else {
+                getStream(selectedAudioInput ?? undefined);
+              }
+            }}
+            disabled={isLoading}
+          >
+            {isDecoding ? "STOP" : "START"}
+          </Button>
+          {isLoading && (
+            <Box
+              style={{ color: "var(--mantine-color-gray-5)", fontSize: "14px" }}
+            >
+              LOADING...
+            </Box>
+          )}
+        </Flex>
+      </Flex>
+
+      <Stack gap={0}>
+        <Box pos="relative">
+          {stream ? (
+            <Scope
+              stream={stream}
+              setFilterFreq={setFilterFreq}
+              filterFreq={filterFreq}
+              filterWidth={filterWidth}
+              gain={gain}
+              decodeWindowSeconds={decodeWindowSeconds}
+            />
+          ) : (
+            <Box
+              style={{
+                height: "256px",
+                width: "100%",
+                background: "var(--mantine-color-dark-9)",
+              }}
+            />
+          )}
+        </Box>
+
+        <Stack gap={0}>
+          <DecodeDisplay
+            segments={currentSegments}
+            isDecoding={isDecoding}
+            decodeWindowSeconds={decodeWindowSeconds}
+          />
+
+          {showJapaneseDisplay && (
+            <DecodeDisplay
+              segments={currentSegmentsJa}
+              isDecoding={isDecoding}
+              backgroundColor="#36021e"
+              decodeWindowSeconds={decodeWindowSeconds}
+            />
+          )}
+        </Stack>
+      </Stack>
+
+      <Flex gap="md" justify="flex-end" wrap="wrap">
+        <Tooltip label="Available after starting the decoder." withArrow>
+          <Box>
+            <NativeSelect
+              w={200}
+              label="INPUT"
+              data={audioInputDevices.map((device) => ({
+                value: device.deviceId,
+                label:
+                  device.label ||
+                  `Device ${audioInputDevices.indexOf(device) + 1}`,
+              }))}
+              value={selectedAudioInput}
+              onChange={(event) =>
+                setSelectedAudioInput(event.currentTarget.value)
+              }
+              disabled={!stream}
+            />
+          </Box>
+        </Tooltip>
+        <NativeSelect
+          label="GAIN"
+          data={["0", "20"]}
+          value={gain.toString()}
+          onChange={(event) => setGain(Number(event.currentTarget.value))}
+          rightSection={"dB"}
+        />
+        <NativeSelect
+          label="WINDOW"
+          data={DECODE_WINDOW_OPTIONS.map((seconds) => ({
+            value: seconds.toString(),
+            label: seconds.toString(),
+          }))}
+          value={decodeWindowSeconds.toString()}
+          onChange={(event) =>
+            setDecodeWindowSeconds(
+              Number(event.currentTarget.value) as DecodeWindowSeconds,
+            )
+          }
+          rightSection={"s"}
+        />
+        <Tooltip label="Click the scope to enable the filter." withArrow>
+          <Box>
+            <NativeSelect
+              label="FIL WID"
+              data={[
+                {
+                  value: DEFAULT_DECODE_BANDWIDTH_HZ.toString(),
+                  label: `${DEFAULT_DECODE_BANDWIDTH_HZ} (OFF)`,
+                },
+                { value: "100", label: "100" },
+                { value: "150", label: "150" },
+                { value: "250", label: "250" },
+              ]}
+              value={activeFilterWidth.toString()}
+              onChange={(event) => {
+                const nextWidth = Number(event.currentTarget.value);
+                if (nextWidth === DEFAULT_DECODE_BANDWIDTH_HZ) {
+                  setFilterFreq(null);
+                  return;
                 }
               }}
               disabled={isLoading}

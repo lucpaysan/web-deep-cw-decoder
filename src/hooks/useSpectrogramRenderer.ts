@@ -1,20 +1,19 @@
 import { useEffect, useRef } from "react";
-import { BUFFER_DURATION_S, MIN_FREQ_HZ, MAX_FREQ_HZ, FFT_SIZE } from "../const";
+import { MIN_FREQ_HZ, MAX_FREQ_HZ } from "../const";
 import { buildColorLUT } from "../utils/colorUtils";
 
 type UseSpectrogramRendererParams = {
   stream: MediaStream;
   gain: number;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
-  /** Called once when the AnalyserNode is set up, enabling auto-filter detection */
-  onAnalyserReady?: (analyser: AnalyserNode) => void;
+  decodeWindowSeconds: number;
 };
 
 export const useSpectrogramRenderer = ({
   stream,
   gain,
   canvasRef,
-  onAnalyserReady,
+  decodeWindowSeconds,
 }: UseSpectrogramRendererParams) => {
   const rafRef = useRef<number | null>(null);
   const nodesRef = useRef<{
@@ -27,6 +26,13 @@ export const useSpectrogramRenderer = ({
     lastTime: performance.now(),
     pixelAccumulator: 0,
   });
+  const decodeWindowSecondsRef = useRef(decodeWindowSeconds);
+
+  useEffect(() => {
+    decodeWindowSecondsRef.current = decodeWindowSeconds;
+    renderStateRef.current.lastTime = performance.now();
+    renderStateRef.current.pixelAccumulator = 0;
+  }, [decodeWindowSeconds]);
 
   useEffect(() => {
     if (nodesRef.current) return;
@@ -75,7 +81,7 @@ export const useSpectrogramRenderer = ({
       const dt = (now - renderStateRef.current.lastTime) / 1000;
       renderStateRef.current.lastTime = now;
 
-      const durationSeconds = BUFFER_DURATION_S;
+      const durationSeconds = decodeWindowSecondsRef.current;
       const pxPerSec = currentCanvas.width / durationSeconds;
       renderStateRef.current.pixelAccumulator += dt * pxPerSec;
 

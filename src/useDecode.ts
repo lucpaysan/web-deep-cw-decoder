@@ -30,8 +30,7 @@ type UseDecodeParams = {
   gain: number;
   stream: MediaStream | null;
   language: "EN" | "EN/JA";
-  decoderMode: DecoderMode;
-  enabled?: boolean;
+  decodeWindowSeconds: number;
 };
 
 /**
@@ -48,8 +47,7 @@ export const useDecode = ({
   gain,
   stream,
   language,
-  decoderMode,
-  enabled = true,
+  decodeWindowSeconds,
 }: UseDecodeParams) => {
   const [loaded, setLoaded] = useState(false);
   const [loadedJa, setLoadedJa] = useState(false);
@@ -58,8 +56,7 @@ export const useDecode = ({
   const [isDecoding, setIsDecoding] = useState(false);
 
   const filterParamsRef = useRef({ filterFreq, filterWidth });
-  const audioBufferRef = useAudioProcessing(stream, gain);
-  const bayesianDecoderRef = useRef(defaultBayesianDecoder);
+  const audioBufferRef = useAudioProcessing(stream, gain, decodeWindowSeconds);
 
   useEffect(() => {
     (async () => {
@@ -95,11 +92,12 @@ export const useDecode = ({
 
   // Reset Bayesian decoder when stream changes
   useEffect(() => {
-    bayesianDecoderRef.current.reset();
-  }, [stream]);
+    setCurrentSegments([]);
+    setCurrentSegmentsJa([]);
+  }, [decodeWindowSeconds]);
 
   useEffect(() => {
-    if (!stream || !loaded || !enabled) {
+    if (!stream || !loaded) {
       return;
     }
 
