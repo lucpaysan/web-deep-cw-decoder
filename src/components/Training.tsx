@@ -634,8 +634,8 @@ export const Training = () => {
         />
 
         {/* Settings */}
-        <Group gap="md" wrap="wrap" mt="md">
-          <Box style={{ flex: 1, minWidth: 120 }}>
+        <Stack gap="md" mt="md">
+          <Box>
             <Text size="xs" c="dimmed" mb={4} fw={500}>CATEGORY</Text>
             <SegmentedControl
               size="xs"
@@ -652,7 +652,7 @@ export const Training = () => {
             />
           </Box>
 
-          <Box style={{ flex: 1, minWidth: 100 }}>
+          <Box>
             <Text size="xs" c="dimmed" mb={4} fw={500}>DIFFICULTY</Text>
             <SegmentedControl
               size="xs"
@@ -667,7 +667,7 @@ export const Training = () => {
               styles={{ root: { background: "#f0fdf4" } }}
             />
           </Box>
-        </Group>
+        </Stack>
 
         {/* Speed and Tone Controls */}
         <Group gap="md" mt="md">
