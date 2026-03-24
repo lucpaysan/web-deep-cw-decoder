@@ -148,6 +148,7 @@ export const NumToChar = Object.fromEntries(
 export const FFT_LENGTH = 256;
 export const HOP_LENGTH = 64;
 export const SAMPLE_RATE = 3200;
+export const FFT_SIZE = 4096; // FFT size for AnalyserNode (must match in morseSignalDetector)
 export const BUFFER_DURATION_S = 12;
 export const BUFFER_SAMPLES = BUFFER_DURATION_S * SAMPLE_RATE;
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { BUFFER_DURATION_S, MIN_FREQ_HZ, MAX_FREQ_HZ } from "../const";
+import { BUFFER_DURATION_S, MIN_FREQ_HZ, MAX_FREQ_HZ, FFT_SIZE } from "../const";
 import { buildColorLUT } from "../utils/colorUtils";
 
 type UseSpectrogramRendererParams = {
@@ -41,7 +41,7 @@ export const useSpectrogramRenderer = ({
     source.connect(gainNode);
 
     const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 2 ** 12;
+    analyser.fftSize = FFT_SIZE;
     analyser.smoothingTimeConstant = 0;
     analyser.minDecibels = -70;
     analyser.maxDecibels = -30;

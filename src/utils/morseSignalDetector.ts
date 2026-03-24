@@ -1,4 +1,4 @@
-import { SAMPLE_RATE, MIN_FREQ_HZ, MAX_FREQ_HZ } from "../const";
+import { SAMPLE_RATE, MIN_FREQ_HZ, MAX_FREQ_HZ, FFT_SIZE } from "../const";
 
 /**
  * Detect Morse signal center frequency from spectrogram energy data.
@@ -8,9 +8,9 @@ import { SAMPLE_RATE, MIN_FREQ_HZ, MAX_FREQ_HZ } from "../const";
  * - Each bin represents a frequency range of sampleRate / fftSize Hz
  *
  * We focus on the MIN_FREQ_HZ to MAX_FREQ_HZ range where CW signals live.
+ *
+ * Note: FFT_SIZE must match the AnalyserNode fftSize in useSpectrogramRenderer.
  */
-
-const FFT_SIZE = 4096; // must match AnalyserNode fftSize in useSpectrogramRenderer
 
 /**
  * Compute bin index range for a given frequency range.
