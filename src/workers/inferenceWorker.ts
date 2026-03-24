@@ -2,14 +2,14 @@
 import * as ort from "onnxruntime-web";
 import { audioToSpectrogramTensor } from "../utils/spectrogramUtils";
 import { decodePredictions, type TextSegment } from "../utils/textDecoder";
-import { ENGLISH_CONFIG, JAPANESE_CONFIG } from "../const";
+// Model paths from public folder
 
 type Lang = "en" | "ja";
 
-// Dynamic model URLs using Vite's import.meta.url
+// Model URLs from public folder (copied during build)
 const MODEL_URLS: Record<Lang, string> = {
-  en: new URL(`../${ENGLISH_CONFIG.MODEL_FILE}`, import.meta.url).href,
-  ja: new URL(`../${JAPANESE_CONFIG.MODEL_FILE}`, import.meta.url).href,
+  en: `/model_en.onnx`,
+  ja: `/model_ja.onnx`,
 };
 
 type WorkerRequest =
