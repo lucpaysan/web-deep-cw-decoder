@@ -2,9 +2,8 @@ import { useState, useCallback } from "react";
 import { DEFAULT_DECODE_BANDWIDTH_HZ, SAMPLE_RATE } from "./const";
 import { Scope } from "./Scope";
 import { useDecode } from "./useDecode";
-import { useDecodeHistory } from "./hooks/useDecodeHistory";
 import { DecodeDisplay } from "./DecodeDisplay";
-import { Box, Button, Flex, Stack, NativeSelect, Tooltip, SegmentedControl, Text, Paper, Textarea } from "@mantine/core";
+import { Box, Button, Flex, Stack, NativeSelect, Tooltip, SegmentedControl, Text, Paper } from "@mantine/core";
 import type { DetectionResult } from "./utils/morseSignalDetector";
 
 type DecoderMode = "DL" | "BAYESIAN";
@@ -34,8 +33,6 @@ export const Decoder = () => {
       decoderMode,
       enabled: true,
     });
-
-  const { decodeHistory, clearHistory } = useDecodeHistory(currentSegments);
 
   const setSelectedAudioInput = (deviceId: string) => {
     _setSelectedAudioInput(deviceId);
@@ -160,9 +157,6 @@ export const Decoder = () => {
 
       {/* Scope and Display Card */}
       <Paper p="md" radius="lg" shadow="sm" style={{ background: "white" }}>
-        <Text size="lg" fw={700} c="emerald.7" mb="md">
-          SPECTRUM
-        </Text>
         <Stack gap={8}>
           <Box pos="relative">
             {stream ? (
@@ -302,24 +296,6 @@ export const Decoder = () => {
             styles={{ input: { borderColor: "#d1fae5" } }}
           />
         </Flex>
-
-        <Text size="lg" fw={700} c="emerald.7" mt="md" mb="sm">
-          DECODE HISTORY
-        </Text>
-        <Textarea
-          value={decodeHistory}
-          readOnly
-          minRows={4}
-          autosize
-          style={{ resize: "none", overflowY: "auto" }}
-        />
-        <Button
-          size="sm"
-          mt="xs"
-          onClick={clearHistory}
-        >
-          Clear History
-        </Button>
       </Paper>
     </Stack>
   );
