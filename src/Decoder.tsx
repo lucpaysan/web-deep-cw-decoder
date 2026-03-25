@@ -154,7 +154,7 @@ export const Decoder = ({ decoderMode }: DecoderProps) => {
           style={{
             background: isDecoding
               ? "linear-gradient(135deg, var(--accent-error), #d47070)"
-              : "linear-gradient(135deg, var(--teal-primary), var(--gold-dark))",
+              : "linear-gradient(135deg, var(--teal-primary), var(--teal-dark))",
             border: "none",
             fontWeight: 700,
             fontSize: 16,

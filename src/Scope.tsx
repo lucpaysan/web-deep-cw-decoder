@@ -38,7 +38,7 @@ export const Scope = ({
           left: 0,
           right: 0,
           height: 2,
-          background: "linear-gradient(90deg, var(--teal-dark), var(--gold-primary), var(--teal-dark))",
+          background: "linear-gradient(90deg, var(--teal-dark), var(--teal-primary), var(--teal-dark))",
           borderRadius: "12px 12px 0 0",
           zIndex: 2,
         }}
@@ -83,7 +83,7 @@ export const Scope = ({
           left: 0,
           right: 0,
           height: 2,
-          background: "linear-gradient(90deg, var(--teal-dark), var(--gold-primary), var(--teal-dark))",
+          background: "linear-gradient(90deg, var(--teal-dark), var(--teal-primary), var(--teal-dark))",
           borderRadius: "0 0 12px 12px",
           zIndex: 2,
         }}
