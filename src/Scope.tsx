@@ -1,10 +1,8 @@
-import { useRef, useCallback } from "react";
+import { useRef } from "react";
 import { Box } from "@mantine/core";
 import { useSpectrogramRenderer } from "./hooks/useSpectrogramRenderer";
 import { useCanvasInteraction } from "./hooks/useCanvasInteraction";
-import { useAutoFilter } from "./hooks/useAutoFilter";
 import { calculateBandPosition } from "./utils/frequencyUtils";
-import type { DetectionResult } from "./utils/morseSignalDetector";
 
 type ScopeProps = {
   stream: MediaStream;
@@ -12,7 +10,6 @@ type ScopeProps = {
   filterFreq: number | null;
   filterWidth: number;
   gain: number;
-  decodeWindowSeconds: number;
 };
 
 export const Scope = ({
@@ -21,12 +18,10 @@ export const Scope = ({
   filterFreq,
   filterWidth,
   gain,
-  decodeWindowSeconds,
 }: ScopeProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
 
-  useSpectrogramRenderer({ stream, gain, canvasRef, decodeWindowSeconds });
+  useSpectrogramRenderer({ stream, gain, canvasRef });
 
   useCanvasInteraction({ canvasRef, filterFreq, setFilterFreq, filterWidth });
 
@@ -37,7 +32,6 @@ export const Scope = ({
 
   return (
     <Box style={{ position: "relative", width: "100%" }}>
-      {/* Mint green top accent line */}
       <Box
         style={{
           position: "absolute",

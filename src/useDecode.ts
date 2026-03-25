@@ -1,28 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { loadModel, runInference } from "./utils/inference";
-import { useAudioProcessing } from "./hooks/useAudioProcessing";
-import { defaultBayesianDecoder } from "./core/bayesianDecoder";
-import { SAMPLE_RATE } from "./const";
+import { useAudioProcessing, type AudioBufferState } from "./hooks/useAudioProcessing";
 import type { TextSegment } from "./utils/textDecoder";
-
-const waitForNextAudioChunk = (
-  audioBufferRef: MutableRefObject<{ version: number }>,
-  currentVersion: number,
-  isCancelled: () => boolean,
-): Promise<void> =>
-  new Promise((resolve) => {
-    const pollForAudio = () => {
-      if (isCancelled() || audioBufferRef.current.version !== currentVersion) {
-        resolve();
-        return;
-      }
-      window.setTimeout(pollForAudio, 10);
-    };
-
-    pollForAudio();
-  });
-
-type DecoderMode = "DL" | "BAYESIAN";
 
 type UseDecodeParams = {
   filterFreq: number | null;
@@ -30,16 +9,9 @@ type UseDecodeParams = {
   gain: number;
   stream: MediaStream | null;
   language: "EN" | "EN/JA";
-  decodeWindowSeconds: number;
+  decoderMode: "DL" | "BAYESIAN";
+  enabled: boolean;
 };
-
-/**
- * Convert Bayesian decoder result to TextSegment format
- */
-function bayesianToTextSegment(text: string): TextSegment[] {
-  if (!text) return [];
-  return [{ text, isAbbreviation: false }];
-}
 
 export const useDecode = ({
   filterFreq,
@@ -47,7 +19,6 @@ export const useDecode = ({
   gain,
   stream,
   language,
-  decodeWindowSeconds,
 }: UseDecodeParams) => {
   const [loaded, setLoaded] = useState(false);
   const [loadedJa, setLoadedJa] = useState(false);
@@ -55,15 +26,12 @@ export const useDecode = ({
   const [currentSegmentsJa, setCurrentSegmentsJa] = useState<TextSegment[]>([]);
   const [isDecoding, setIsDecoding] = useState(false);
 
-  const filterParamsRef = useRef({ filterFreq, filterWidth });
-  const audioBufferRef = useAudioProcessing(stream, gain, decodeWindowSeconds);
+  const audioBufferRef = useAudioProcessing(stream, gain, 12);
 
   useEffect(() => {
     (async () => {
-      console.log("[useDecode] Loading English model...");
       try {
         await loadModel("en");
-        console.log("[useDecode] English model loaded successfully");
         setLoaded(true);
       } catch (error) {
         console.error("[useDecode] Failed to load English model:", error);
@@ -74,10 +42,8 @@ export const useDecode = ({
   useEffect(() => {
     if (language === "EN/JA" && !loadedJa) {
       (async () => {
-        console.log("[useDecode] Loading Japanese model...");
         try {
           await loadModel("ja");
-          console.log("[useDecode] Japanese model loaded successfully");
           setLoadedJa(true);
         } catch (error) {
           console.error("[useDecode] Failed to load Japanese model:", error);
@@ -85,16 +51,6 @@ export const useDecode = ({
       })();
     }
   }, [language, loadedJa]);
-
-  useEffect(() => {
-    filterParamsRef.current = { filterFreq, filterWidth };
-  }, [filterFreq, filterWidth]);
-
-  // Reset Bayesian decoder when stream changes
-  useEffect(() => {
-    setCurrentSegments([]);
-    setCurrentSegmentsJa([]);
-  }, [decodeWindowSeconds]);
 
   useEffect(() => {
     if (!stream || !loaded) {
@@ -105,10 +61,10 @@ export const useDecode = ({
 
     const decodeContinuously = async () => {
       while (!cancelled) {
-        const { filterFreq, filterWidth } = filterParamsRef.current;
+        const audioState: AudioBufferState = audioBufferRef.current;
 
         const segmentsEn = await runInference(
-          audioBufferRef.current,
+          audioState.samples,
           filterFreq,
           filterWidth,
           "en"
@@ -120,7 +76,7 @@ export const useDecode = ({
 
         if (language === "EN/JA" && loadedJa) {
           const segmentsJa = await runInference(
-            audioBufferRef.current,
+            audioState.samples,
             filterFreq,
             filterWidth,
             "ja"
@@ -140,15 +96,7 @@ export const useDecode = ({
       cancelled = true;
       setIsDecoding(false);
     };
-
-    setIsDecoding(true);
-    void decodeContinuously();
-
-    return () => {
-      cancelled = true;
-      setIsDecoding(false);
-    };
-  }, [stream, loaded, loadedJa, language, decoderMode, enabled, audioBufferRef]);
+  }, [stream, loaded, loadedJa, language, filterFreq, filterWidth, audioBufferRef]);
 
   return { loaded, loadedJa, currentSegments, currentSegmentsJa, isDecoding };
 };

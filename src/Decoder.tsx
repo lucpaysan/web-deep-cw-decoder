@@ -10,7 +10,6 @@ import { Scope } from "./Scope";
 import { useDecode } from "./useDecode";
 import { DecodeDisplay } from "./DecodeDisplay";
 import { Box, Button, Flex, Stack, NativeSelect, Tooltip, SegmentedControl, Text, Paper } from "@mantine/core";
-import type { DetectionResult } from "./utils/morseSignalDetector";
 
 type DecoderMode = "DL" | "BAYESIAN";
 
@@ -20,6 +19,9 @@ export const Decoder = () => {
   const [filterWidth, setFilterWidth] = useState<number>(250);
   const [gain, setGain] = useState<number>(0);
   const [language, setLanguage] = useState<"EN" | "EN/JA">("EN");
+  const [decoderMode, setDecoderMode] = useState<DecoderMode>("DL");
+  const [autoFilterEnabled, setAutoFilterEnabled] = useState(false);
+  const [autoDetectedFreq, setAutoDetectedFreq] = useState<number | null>(null);
   const [decodeWindowSeconds, setDecodeWindowSeconds] =
     useState<DecodeWindowSeconds>(DEFAULT_DECODE_WINDOW_S);
 
@@ -35,7 +37,8 @@ export const Decoder = () => {
       gain,
       stream,
       language,
-      decodeWindowSeconds,
+      decoderMode,
+      enabled: true,
     });
 
   const setSelectedAudioInput = (deviceId: string) => {
@@ -43,31 +46,12 @@ export const Decoder = () => {
     getStream(deviceId);
   };
 
-  const handleAutoDetected = useCallback((result: DetectionResult | null) => {
-    if (result && autoFilterEnabled) {
-      // Set detected frequency as filter, use detected bandwidth
-      setAutoDetectedFreq(result.frequency);
-      setFilterFreq(result.frequency);
-      // Auto-enable filter width 250 when detected
-      setFilterWidth(250);
-    }
-  }, [autoFilterEnabled]);
-
   const getStream = async (selectedAudioInput?: string) => {
-    console.log("[Decoder] getStream called, mediaDevices:", !!navigator.mediaDevices);
-
-    if (!navigator.mediaDevices) {
-      console.error("[Decoder] navigator.mediaDevices is not available");
-      alert("Error: Audio input not available in this browser.");
-      return;
-    }
-
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
     }
 
     try {
-      console.log("[Decoder] Requesting microphone access...");
       const newStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           deviceId: selectedAudioInput
@@ -81,14 +65,12 @@ export const Decoder = () => {
         },
       });
 
-      console.log("[Decoder] Microphone access granted, stream:", newStream.id);
       setStream(newStream);
 
       const devices = await navigator.mediaDevices.enumerateDevices();
       const audioInputs = devices.filter(
         (device) => device.kind === "audioinput",
       );
-      console.log("[Decoder] Found audio inputs:", audioInputs.length);
       setAudioInputDevices(audioInputs);
     } catch (error) {
       console.error("[Decoder] Failed to get microphone access:", error);
@@ -108,138 +90,25 @@ export const Decoder = () => {
   const showJapaneseDisplay = language === "EN/JA";
 
   return (
-    <Stack gap={8}>
-      <Flex justify="space-between" align="center">
-        <Flex align="center" gap="sm">
-          <Button
-            w={200}
-            color={isDecoding ? "red" : "indigo"}
-            onClick={() => {
-              if (isDecoding) {
-                setStream(null);
-              } else {
-                getStream(selectedAudioInput ?? undefined);
-              }
-            }}
-            disabled={isLoading}
-          >
-            {isDecoding ? "STOP" : "START"}
-          </Button>
-          {isLoading && (
-            <Box
-              style={{ color: "var(--mantine-color-gray-5)", fontSize: "14px" }}
-            >
-              LOADING...
-            </Box>
-          )}
-        </Flex>
-      </Flex>
-
-      <Stack gap={0}>
-        <Box pos="relative">
-          {stream ? (
-            <Scope
-              stream={stream}
-              setFilterFreq={setFilterFreq}
-              filterFreq={filterFreq}
-              filterWidth={filterWidth}
-              gain={gain}
-              decodeWindowSeconds={decodeWindowSeconds}
-            />
-          ) : (
-            <Box
-              style={{
-                height: "256px",
-                width: "100%",
-                background: "var(--mantine-color-dark-9)",
-              }}
-            />
-          )}
-        </Box>
-
-        <Stack gap={0}>
-          <DecodeDisplay
-            segments={currentSegments}
-            isDecoding={isDecoding}
-            decodeWindowSeconds={decodeWindowSeconds}
-          />
-
-          {showJapaneseDisplay && (
-            <DecodeDisplay
-              segments={currentSegmentsJa}
-              isDecoding={isDecoding}
-              backgroundColor="#36021e"
-              decodeWindowSeconds={decodeWindowSeconds}
-            />
-          )}
-        </Stack>
-      </Stack>
-
-      <Flex gap="md" justify="flex-end" wrap="wrap">
-        <Tooltip label="Available after starting the decoder." withArrow>
-          <Box>
-            <NativeSelect
-              w={200}
-              label="INPUT"
-              data={audioInputDevices.map((device) => ({
-                value: device.deviceId,
-                label:
-                  device.label ||
-                  `Device ${audioInputDevices.indexOf(device) + 1}`,
-              }))}
-              value={selectedAudioInput}
-              onChange={(event) =>
-                setSelectedAudioInput(event.currentTarget.value)
-              }
-              disabled={!stream}
-            />
-          </Box>
-        </Tooltip>
-        <NativeSelect
-          label="GAIN"
-          data={["0", "20"]}
-          value={gain.toString()}
-          onChange={(event) => setGain(Number(event.currentTarget.value))}
-          rightSection={"dB"}
-        />
-        <NativeSelect
-          label="WINDOW"
-          data={DECODE_WINDOW_OPTIONS.map((seconds) => ({
-            value: seconds.toString(),
-            label: seconds.toString(),
-          }))}
-          value={decodeWindowSeconds.toString()}
-          onChange={(event) =>
-            setDecodeWindowSeconds(
-              Number(event.currentTarget.value) as DecodeWindowSeconds,
-            )
-          }
-          rightSection={"s"}
-        />
-        <Tooltip label="Click the scope to enable the filter." withArrow>
-          <Box>
-            <NativeSelect
-              label="FIL WID"
-              data={[
-                {
-                  value: DEFAULT_DECODE_BANDWIDTH_HZ.toString(),
-                  label: `${DEFAULT_DECODE_BANDWIDTH_HZ} (OFF)`,
-                },
-                { value: "100", label: "100" },
-                { value: "150", label: "150" },
-                { value: "250", label: "250" },
-              ]}
-              value={activeFilterWidth.toString()}
-              onChange={(event) => {
-                const nextWidth = Number(event.currentTarget.value);
-                if (nextWidth === DEFAULT_DECODE_BANDWIDTH_HZ) {
-                  setFilterFreq(null);
-                  return;
+    <Stack gap={12}>
+      {/* Controls Card */}
+      <Paper p="md" radius="lg" shadow="sm" style={{ background: "white" }}>
+        <Flex justify="space-between" align="center" wrap="wrap" gap="md">
+          <Flex align="center" gap="md">
+            <Button
+              w={160}
+              size="lg"
+              color={isDecoding ? "red" : "emerald"}
+              onClick={() => {
+                if (isDecoding) {
+                  setStream(null);
+                } else {
+                  getStream(selectedAudioInput ?? undefined);
                 }
               }}
               disabled={isLoading}
               styles={{
-                root: { fontWeight: 600, fontSize: "16px" },
+                root: { fontWeight: 700, fontSize: "16px" },
               }}
             >
               {isDecoding ? "■ STOP" : "▶ START"}
@@ -282,8 +151,6 @@ export const Decoder = () => {
                 filterFreq={filterFreq}
                 filterWidth={filterWidth}
                 gain={gain}
-                autoFilterEnabled={autoFilterEnabled}
-                onAutoDetected={handleAutoDetected}
               />
             ) : (
               <Box
@@ -298,14 +165,18 @@ export const Decoder = () => {
           </Box>
 
           <Stack gap={0}>
-            <DecodeDisplay segments={currentSegments} isDecoding={isDecoding} />
+            <DecodeDisplay
+              segments={currentSegments}
+              isDecoding={isDecoding}
+              decodeWindowSeconds={decodeWindowSeconds}
+            />
 
             {showJapaneseDisplay && (
               <DecodeDisplay
                 segments={currentSegmentsJa}
                 isDecoding={isDecoding}
-                backgroundColor="#1a0a1e"
-                textColor="#f0abfc"
+                backgroundColor="#36021e"
+                decodeWindowSeconds={decodeWindowSeconds}
               />
             )}
           </Stack>
@@ -344,7 +215,23 @@ export const Decoder = () => {
             rightSection={"dB"}
             styles={{ input: { borderColor: "#d1fae5" } }}
           />
-          <Tooltip label="Automatically detect Morse signal frequency from the spectrogram." withArrow>
+          <NativeSelect
+            w={100}
+            label="WINDOW"
+            data={DECODE_WINDOW_OPTIONS.map((seconds) => ({
+              value: seconds.toString(),
+              label: seconds.toString(),
+            }))}
+            value={decodeWindowSeconds.toString()}
+            onChange={(event) =>
+              setDecodeWindowSeconds(
+                Number(event.currentTarget.value) as DecodeWindowSeconds,
+              )
+            }
+            rightSection={"s"}
+            styles={{ input: { borderColor: "#d1fae5" } }}
+          />
+          <Tooltip label="Automatically detect Morse signal frequency." withArrow>
             <Box>
               <Button
                 size="sm"
@@ -354,7 +241,6 @@ export const Decoder = () => {
                   setAutoFilterEnabled((prev) => {
                     const next = !prev;
                     if (!next) {
-                      // Turning off auto-filter: clear detected frequency
                       setAutoDetectedFreq(null);
                     }
                     return next;
@@ -392,7 +278,6 @@ export const Decoder = () => {
                     setFilterFreq(null);
                     return;
                   }
-
                   setFilterWidth(nextWidth);
                 }}
                 disabled={!isFilterEnabled || autoFilterEnabled}

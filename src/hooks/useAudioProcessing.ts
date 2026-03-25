@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { AUDIO_CHUNK_SAMPLES, SAMPLE_RATE, getBufferSamples } from "../const";
 
 export type AudioBufferState = {
@@ -157,14 +157,14 @@ export function useAudioProcessing(
       src: MediaStreamAudioSourceNode,
       gn: GainNode
     ) => {
-      const scriptProcessor = ctx.createScriptProcessor(2048, 1, 1);
+      const scriptProcessor = ctx.createScriptProcessor(AUDIO_CHUNK_SAMPLES, 1, 1);
       scriptProcessor.onaudioprocess = (event) => {
         if (abortedRef.current) return;
         const chunk = event.inputBuffer.getChannelData(0);
         const chunkLen = chunk.length;
         const samples = audioBufferRef.current.samples;
         samples.copyWithin(0, chunkLen);
-        samples.set(chunk, BUFFER_SAMPLES - chunkLen);
+        samples.set(chunk, samples.length - chunkLen);
         audioBufferRef.current.version += 1;
       };
 

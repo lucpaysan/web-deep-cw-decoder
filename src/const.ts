@@ -146,6 +146,7 @@ export const NumToChar = Object.fromEntries(
 );
 
 export const FFT_LENGTH = 256;
+export const FFT_SIZE = FFT_LENGTH; // Alias for compatibility
 export const HOP_LENGTH = 64;
 export const SAMPLE_RATE = 3200;
 export const AUDIO_CHUNK_SAMPLES = 2048;

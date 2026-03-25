@@ -27,6 +27,7 @@ type DecodeDisplayProps = {
   segments: TextSegment[];
   isDecoding: boolean;
   backgroundColor?: string;
+  textColor?: string;
   decodeWindowSeconds: number;
 };
 
@@ -34,6 +35,7 @@ export const DecodeDisplay = ({
   segments,
   isDecoding,
   backgroundColor = "var(--mantine-color-dark-9)",
+  textColor = "white",
   decodeWindowSeconds,
 }: DecodeDisplayProps) => {
   const prevSegmentsRef = useRef(segments);

@@ -1,19 +1,19 @@
 import { useEffect, useRef } from "react";
-import { MIN_FREQ_HZ, MAX_FREQ_HZ } from "../const";
+import { FFT_LENGTH, MIN_FREQ_HZ, MAX_FREQ_HZ } from "../const";
 import { buildColorLUT } from "../utils/colorUtils";
 
 type UseSpectrogramRendererParams = {
   stream: MediaStream;
   gain: number;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
-  decodeWindowSeconds: number;
+  decodeWindowSeconds?: number;
 };
 
 export const useSpectrogramRenderer = ({
   stream,
   gain,
   canvasRef,
-  decodeWindowSeconds,
+  decodeWindowSeconds = 12,
 }: UseSpectrogramRendererParams) => {
   const rafRef = useRef<number | null>(null);
   const nodesRef = useRef<{
@@ -47,18 +47,13 @@ export const useSpectrogramRenderer = ({
     source.connect(gainNode);
 
     const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = FFT_SIZE;
+    analyser.fftSize = FFT_LENGTH;
     analyser.smoothingTimeConstant = 0;
     analyser.minDecibels = -70;
     analyser.maxDecibels = -30;
     gainNode.connect(analyser);
 
     nodesRef.current = { audioCtx, source, analyser };
-
-    // Notify parent that analyser is ready (for auto-filter detection)
-    if (onAnalyserReady) {
-      onAnalyserReady(analyser);
-    }
 
     const freqBins = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(freqBins);
