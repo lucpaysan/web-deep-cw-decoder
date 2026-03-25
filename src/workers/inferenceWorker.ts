@@ -9,8 +9,11 @@ import {
 } from "../utils/signalQuality";
 import { ENGLISH_CONFIG } from "../const";
 
-// Model URL - use location pathname to support GitHub Pages subdirectory
-const MODEL_URL = `${self.location.origin}${self.location.pathname.replace(/\/[^/]*$/, "")}/${ENGLISH_CONFIG.MODEL_FILE}`;
+// Model URL - derive base path from worker script location
+// Worker is at /cw-by4cwy/assets/inferenceWorker-xxx.js, so remove /assets/xxx.js to get base
+const WORKER_PATH = self.location.pathname;
+const BASE_PATH = WORKER_PATH.substring(0, WORKER_PATH.indexOf("/assets/"));
+const MODEL_URL = `${self.location.origin}${BASE_PATH}/${ENGLISH_CONFIG.MODEL_FILE}`;
 
 type WorkerRequest =
   | { id: number; type: "loadModel" }
