@@ -9,8 +9,8 @@ import {
 } from "../utils/signalQuality";
 import { ENGLISH_CONFIG } from "../const";
 
-// Model URL - served from public directory at root
-const MODEL_URL = `${self.location.origin}/${ENGLISH_CONFIG.MODEL_FILE}`;
+// Model URL - use location pathname to support GitHub Pages subdirectory
+const MODEL_URL = `${self.location.origin}${self.location.pathname.replace(/\/[^/]*$/, "")}/${ENGLISH_CONFIG.MODEL_FILE}`;
 
 type WorkerRequest =
   | { id: number; type: "loadModel" }
