@@ -55,11 +55,22 @@ jobs:
         with:
           targets: aarch64-linux-android
 
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Setup Android SDK with cmdline-tools
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;26.1.10909125" || \
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.2.9519653"
+
       - name: Install dependencies
         run: npm ci
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
 
       - name: Build Tauri app (Android APK)
         run: |
